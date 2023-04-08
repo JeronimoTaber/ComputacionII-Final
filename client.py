@@ -8,6 +8,7 @@ async def send_message(reader, writer):
     response_game_starts = await reader.readline()
     print(response_game_starts.decode().strip())
     
+    #Game Started
     while True:
         message = input("Enter a message to send (type 'quit' to exit): ")
         if not message:
