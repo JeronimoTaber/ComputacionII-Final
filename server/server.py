@@ -5,18 +5,20 @@ import logging
 from classes.gameRoomManager import GameRoomManager
 from classes.mainServer import Server
 from classes.player import Player
-
+from multiprocessing import Process, Manager,  Lock
+from multiprocessing.managers import BaseManager
+import time 
 MAX_PLAYERS_PER_ROOM = 4
 
 
-async def handle_client(reader, writer, game_room_uuid, game_room_manager):
+async def handle_client(reader, writer, game_room_uuid, game_room_manager, lock):
     print(f"New client connected: {writer.get_extra_info('peername')} to room: {game_room_uuid}")
 
     name = await reader.readline()
 
     player = Player(name.decode().strip(), writer.get_extra_info('peername'))
-
-    game_room_manager.add_player_to_game_room(game_room_uuid, player)
+    with lock:
+        game_room_manager.add_player_to_game_room(game_room_uuid, player)
     game_room = game_room_manager.get_game_room(game_room_uuid)
     print(game_room)
     writer.write(f"{game_room}\n".encode())
@@ -36,8 +38,8 @@ async def handle_client(reader, writer, game_room_uuid, game_room_manager):
                 print("creating new room")
 
         print(f"Received from {writer.get_extra_info('peername')}: {data.decode().strip()}")
-
-    game_room_manager.remove_player_from_game_room(game_room_uuid, player)
+    with lock:
+        game_room_manager.remove_player_from_game_room(game_room_uuid, player)
     print(f"Client {writer.get_extra_info('peername')} disconnected")
     game_rooms = game_room_manager.get_all_rooms()
     for game_room in game_rooms:
@@ -46,8 +48,8 @@ async def handle_client(reader, writer, game_room_uuid, game_room_manager):
     await writer.wait_closed()
 
 
-async def start_server(game_room_uuid, port, game_room_manager):
-    server = await asyncio.start_server(lambda r, w: handle_client(r, w, game_room_uuid, game_room_manager), "127.0.0.1", port)
+async def start_server(game_room_uuid, port, game_room_manager, lock):
+    server = await asyncio.start_server(lambda r, w: handle_client(r, w, game_room_uuid, game_room_manager, lock), "127.0.0.1", port)
     print(f"Server listening on {server.sockets[0].getsockname()}")
     print(f"Room UUILD {game_room_uuid}")
 
@@ -61,9 +63,12 @@ def get_random_unused_port():
         return s.getsockname()[1]
 
 
-def handle(connection, address, game_room_manager):
+def handle(connection, address, game_room_manager, lock):
     try:
-        game_room_uuid = game_room_manager.create_game_room(MAX_PLAYERS_PER_ROOM)
+        with lock:
+            print('sleeping')
+            time.sleep(1)
+            game_room_uuid = game_room_manager.create_game_room(MAX_PLAYERS_PER_ROOM)
         game_rooms = game_room_manager.get_all_rooms()
         print("/////////////////////\n")
         for game_room in game_rooms:
@@ -74,12 +79,10 @@ def handle(connection, address, game_room_manager):
             
         port = str(get_random_unused_port())
         connection.sendall(port.encode())
-        asyncio.run(start_server(game_room_uuid, port, game_room_manager))
+        asyncio.run(start_server(game_room_uuid, port, game_room_manager, lock))
     finally:
         connection.close()
 
-from multiprocessing import Process, Manager
-from multiprocessing.managers import BaseManager
 
 if __name__ == "__main__":
     server = Server("127.0.0.1", 9000)
@@ -88,8 +91,10 @@ if __name__ == "__main__":
         BaseManager.register('GameRoomManager', GameRoomManager)
         manager = BaseManager()
         manager.start()
-        inst = manager.GameRoomManager()
-        server.start(handle,inst)
+        game_room_mmanager_instance = manager.GameRoomManager()
+
+        lock_instance = Manager().Lock()
+        server.start(handle,game_room_mmanager_instance, lock_instance)
     except Exception as e: # work on python 3.x
         logger = logging.getLogger("server")
         logger.error('Failed to upload to ftp: '+ str(e))
