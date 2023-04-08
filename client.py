@@ -1,13 +1,29 @@
-# echo-client.py
+import asyncio
+import pygame, sys
 
-import socket
+async def send_message(reader, writer):
+    playerName = input("select player name: ")
+    writer.write(f"{playerName}\n".encode())
+    await writer.drain()
+    response_game_starts = await reader.readline()
+    print(response_game_starts.decode().strip())
+    
+    while True:
+        message = input("Enter a message to send (type 'quit' to exit): ")
+        if not message:
+            continue
+        writer.write(f"{message}\n".encode())
+        await writer.drain()
+        if message == "quit":
+            break
 
-HOST = "127.0.0.1"  # The server's hostname or IP address
-PORT = 65432  # The port used by the server
+    writer.close()
+    await writer.wait_closed()
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect((HOST, PORT))
-    s.sendall(b"Hello, world")
-    data = s.recv(1024)
+async def start_client():
+    reader, writer = await asyncio.open_connection("127.0.0.1", 65432)
+    print(f"Connected to server: {writer.get_extra_info('peername')}")
 
-print(f"Received {data!r}")
+    await send_message(reader, writer)
+
+asyncio.run(start_client())
