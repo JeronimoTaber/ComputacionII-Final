@@ -19,6 +19,10 @@ def main_server(port, value):
     client_socket.close()
     return game_port
 
+async def read_messages(reader):
+    while True:
+        message = await reader.readline()
+        print(message.decode().strip())
 
 async def game_server(reader, writer):
     print('Connected to game server')
@@ -27,10 +31,13 @@ async def game_server(reader, writer):
     await writer.drain()
     # game = Game()
     # game.run(reader, writer)
+    asyncio.create_task(read_messages(reader))
     while True:
-        message = input(name+': ')
+        message = await asyncio.to_thread(input, f"{name}: ")
         writer.write(f"{message}\n".encode())
         await writer.drain()
+
+    
     writer.close()
     await writer.wait_closed()
 
