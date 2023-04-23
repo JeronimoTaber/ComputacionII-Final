@@ -3,17 +3,16 @@ import multiprocessing
 import socket
 import logging
 from classes.gameRoomManager import GameRoomManager
-from classes.mainServer import Server
+from mainServer import Server
 from classes.player import Player
 from multiprocessing import Manager
 from multiprocessing.managers import BaseManager
-
+from periodic import Periodic
 
 if __name__ == "__main__":
     
     server = Server("127.0.0.1", 9000)
     try:
-        
         BaseManager.register('GameRoomManager', GameRoomManager)
         manager = BaseManager()
         manager.start()

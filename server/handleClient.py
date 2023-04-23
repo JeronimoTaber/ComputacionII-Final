@@ -4,14 +4,16 @@ import asyncio
 
 async def handleClient(reader, writer, game_room_uuid, game_room_manager, lock):
     print(f"New client connected: {writer.get_extra_info('peername')} to room: {game_room_uuid}")
+    player = Player("", writer.get_extra_info('peername'))
 
     name = await reader.readline()
 
-    player = Player(name.decode().strip(), writer.get_extra_info('peername'))
+    named = player.set_name(name)
     with lock:
-        game_room_manager.add_player_to_game_room(game_room_uuid, player)
+        if(name is not None):
+            game_room_manager.add_player_to_game_room(game_room_uuid, player)
     game_room = game_room_manager.get_game_room(game_room_uuid)
-    print(game_room)
+    print(player)
     writer.write(f"{game_room}\n".encode())
     await writer.drain()
 
@@ -44,4 +46,5 @@ async def startServer(game_room_uuid, port, game_room_manager, lock):
     print(f"Room UUILD {game_room_uuid}")
 
     async with server:
-        await server.serve_forever()
+        await server.wait_closed()
+
