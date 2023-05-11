@@ -16,7 +16,7 @@ async def handleClient(reader, writer, game_room_uuid, game_room_manager, lock, 
 
             game_room_manager.add_player_to_game_room(game_room_uuid, player)
     game_room = game_room_manager.get_game_room(game_room_uuid)
-
+    print(game_room)
 
     # Game Started
     while True:
