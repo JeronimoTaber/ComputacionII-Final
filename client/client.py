@@ -21,7 +21,7 @@ def main_server(port, value):
 
 async def read_messages(reader):
     while True:
-        message = await reader.readline()
+        message = await reader.read(65535)
         print(message.decode().strip())
 
 async def game_server(reader, writer):

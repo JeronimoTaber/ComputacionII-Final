@@ -93,3 +93,17 @@ class GameRoomManager:
             return random.choice(available_rooms)
         else:
             return None
+
+    def add_message_to_game_room(self, game_room_uuid, message):
+        game_room = self.get_game_room(game_room_uuid)
+        if game_room:
+            game_room.add_message(message)
+            return True
+        return None
+    
+    def get_messages(self, game_room_uuid):
+        game_room = self.get_game_room(game_room_uuid)
+        if game_room:
+            response = game_room.messages
+            return response
+        return None
