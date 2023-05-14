@@ -21,16 +21,17 @@ def main_server(port, value):
 
 async def read_messages(reader):
     while True:
-        message = await reader.read(65535)
+        message = await reader.read(65535)        
+        print('\n Response: \n')
         print(message.decode().strip())
+        print('\n End Response \n ---------- \n')
 
 async def game_server(reader, writer):
     print('Connected to game server')
     name = input('Name: ')
     writer.write(f"{name}\n".encode())
     await writer.drain()
-    # game = Game()
-    # game.run(reader, writer)
+
     asyncio.create_task(read_messages(reader))
     while True:
         message = await asyncio.to_thread(input, f"{name}: ")
