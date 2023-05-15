@@ -4,6 +4,7 @@ import asyncio
 import argparse
 import socket 
 import time
+import sys
 def main_server(port, value):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect(('localhost', port))
@@ -25,6 +26,9 @@ async def read_messages(reader):
         print('\n Response: \n')
         print(message.decode().strip())
         print('\n End Response \n ---------- \n')
+        if not message:
+            break
+    
 
 async def game_server(reader, writer):
     print('Connected to game server')
@@ -32,8 +36,10 @@ async def game_server(reader, writer):
     writer.write(f"{name}\n".encode())
     await writer.drain()
 
-    asyncio.create_task(read_messages(reader))
+    reader = asyncio.create_task(read_messages(reader))
     while True:
+        if(reader.done()):
+            break
         message = await asyncio.to_thread(input, f"{name}: ")
         writer.write(f"{message}\n".encode())
         await writer.drain()

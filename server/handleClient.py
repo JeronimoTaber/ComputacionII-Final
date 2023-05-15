@@ -2,9 +2,7 @@ from classes.player import Player
 import asyncio
 import dill as pickle
 import openai
-import openai_async
-import os
-
+from tasks import add, chat_complete_task
 
 async def handleClient(reader, writer, game_room_uuid, game_room_manager, lock, clients_writers):
     print(
@@ -48,29 +46,21 @@ async def handleClient(reader, writer, game_room_uuid, game_room_manager, lock, 
             messages = game_room_manager.get_messages(game_room_uuid)
 
             messages.append(message)
-            response = "ERROR"
+            variable = "ERROR"
             try:
-                completion = await openai_async.chat_complete(
-                    os.getenv("OPENAI_API_KEY"),
-                    timeout=2,
-                    payload={
-                        "model": "gpt-3.5-turbo",
-                        "messages": messages,
-                    },
-                )
-                response = completion.json()["choices"][0]["message"]["content"].strip()
+                response = chat_complete_task.delay(messages)
+                variable = response.get()
                 game_room_manager.add_message_to_game_room(game_room_uuid, message)
-                response_message = {"role": "assistant", "content": f"{response}"}
+                response_message = {"role": "assistant", "content": f"{variable}"}
                 game_room_manager.add_message_to_game_room(
                     game_room_uuid, response_message)
-            except:       
-                response = "Error"
-                
+            except Exception as e:  
+                print(e)     
+                variable = "Error"
 
-        print(clients_writers)
         for remote_writer in clients_writers:
             remote_writer.writer.write(('\n'+name.decode().strip()+' Message: \n'+data.decode().strip(
-            )+'\nResponse: \n'+response).encode())
+            )+'\nResponse: \n'+variable).encode())
             await remote_writer.writer.drain()
 
     with lock:

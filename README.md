@@ -6,3 +6,11 @@
 
 
 NO ESTA MANDANDO EN MENSAJE DE FORMA SINCRONA
+
+
+celery -A tasks worker --loglevel=infoclear
+
+python3 server/server.py 
+python3 client/client.py -n
+python3 client/client.py -r 
+python3 client/client.py -p 45281
