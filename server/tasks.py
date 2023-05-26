@@ -18,12 +18,13 @@ def add(x, y):
 async def run_chat_complete_task(api_key, messages):
     try:
         completion = await openai_async.chat_complete(
-            os.getenv("OPENAI_API_KEY"),
-            timeout=2,
+            api_key,
+            timeout=20,
             payload={
                 "model": "gpt-3.5-turbo",
                 "messages": messages,
             },)
+        print(completion.json())
         response = completion.json()["choices"][0]["message"]["content"].strip()
         return response        
     except Exception as e:

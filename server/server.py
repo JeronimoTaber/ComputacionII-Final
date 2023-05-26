@@ -11,7 +11,7 @@ from periodic import Periodic
 
 if __name__ == "__main__":
     
-    server = Server("127.0.0.1", 9000)
+    server = Server("::", 9000)
     try:
         BaseManager.register('GameRoomManager', GameRoomManager)
         manager = BaseManager()

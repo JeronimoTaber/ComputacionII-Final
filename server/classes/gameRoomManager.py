@@ -8,9 +8,12 @@ class GameRoomManager:
         self.game_rooms = set()
 
     def create_game_room(self, max_players, port):
-        game_room = GameRoom(max_players, port)
-        self.game_rooms.add(game_room)
-        return game_room.uuid
+        try:
+            game_room = GameRoom(max_players, port)
+            self.game_rooms.add(game_room)
+            return game_room.uuid
+        except Exception as e:
+            raise Exception(e) 
 
     def add_player_to_game_room(self, game_room_uuid, player):
         game_room = self.get_game_room(game_room_uuid)
