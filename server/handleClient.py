@@ -85,19 +85,16 @@ async def startServer(game_room_uuid, port, game_room_manager, lock):
     #UTILIZA LA DIRECCION IPV6 WILDCARD QUE  ESPECIFICANDO family=socket.AF_UNSPEC ACEPTA CONECCIONES DE IPV4 e IPV6\
 
     try:
-        serverIPV4 = await asyncio.start_server(lambda r, w: handleClient(r, w, game_room_uuid, game_room_manager, lock, clients_writers), "localhost", port) 
-
-        serverIPV6 = await asyncio.start_server(
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.bind(('::', int(port)))
+        serverIPV = await asyncio.start_server(
             lambda r, w: handleClient(r, w, game_room_uuid, game_room_manager, lock, clients_writers),
-            "::",
-            port,
-            family=socket.AF_UNSPEC
+            sock = sock
         )    
     except Exception as e:
         print (e)
     # server = await asyncio.start_server(lambda r, w: handleClient(r, w, game_room_uuid, game_room_manager, lock, clients_writers), "127.0.0.1", port) 
 
-
-
-    async with serverIPV4 and serverIPV6:
-        await serverIPV4.wait_closed() and await serverIPV6.wait_closed() 
+    
+    async with serverIPV:
+        await serverIPV.wait_closed()
